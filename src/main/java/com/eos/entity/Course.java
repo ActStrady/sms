@@ -5,7 +5,7 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-public class course {
+public class Course {
 
     private int courseId;
 
