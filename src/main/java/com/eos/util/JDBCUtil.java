@@ -5,17 +5,22 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 public class JDBCUtil {
 
+    private static final Logger logger = LoggerFactory.getLogger(JDBCUtil.class);
     private static final String DRIVER;
     private static final String URL;
     private static final String USER;
     private static final String PASSWORD;
     private static Connection connection;
-    private static final Logger logger = LoggerFactory.getLogger(JDBCUtil.class);
+    private static PreparedStatement preparedStatement;
+    private static ResultSet resultSet;
 
     private JDBCUtil() {
     }
@@ -108,8 +113,107 @@ public class JDBCUtil {
     }
 
     /**
+     * 通过反射机制查询单条记录
+     *
+     * @param sql
+     * @param params
+     * @param cls
+     * @return
+     * @throws Exception
+     */
+    public static <T> T findSimpleRefResult(String sql, List<Object> params,
+                                     Class<T> cls) throws SQLException, IllegalAccessException,
+            InstantiationException, NoSuchFieldException {
+        T resultObject = null;
+        int index = 1;
+        preparedStatement = connection.prepareStatement(sql);
+        if (params != null && !params.isEmpty()) {
+            for (int i = 0; i < params.size(); i++) {
+                preparedStatement.setObject(index++, params.get(i));
+            }
+        }
+        resultSet = preparedStatement.executeQuery();
+        ResultSetMetaData metaData = resultSet.getMetaData();
+        int cols_len = metaData.getColumnCount();
+        if (resultSet.next()) {
+
+            //通过反射机制创建一个实例
+            resultObject = cls.newInstance();
+            for (int i = 0; i < cols_len; i++) {
+                String cols_name = metaData.getColumnName(i + 1);
+                Object cols_value = resultSet.getObject(cols_name);
+                if (cols_value == null) {
+                    cols_value = "";
+                }
+                Field field = cls.getDeclaredField(cols_name);
+                if (field.getType() == int.class) {
+                    if (cols_value == "") {
+                        cols_value = 0;
+                    } else {
+                        cols_value = Integer.parseInt(cols_value.toString());
+                    }
+
+                }
+                field.setAccessible(true); //打开javabean的访问权限
+                field.set(resultObject, cols_value);
+            }
+        }
+        return resultObject;
+
+    }
+
+    /**
+     * 通过反射机制查询多条记录
+     *
+     * @param sql
+     * @param params
+     * @param cls
+     * @return
+     * @throws Exception
+     */
+    public <T> List<T> findMoreRefResult(String sql, List<Object> params,
+                                         Class<T> cls) throws SQLException, IllegalAccessException, InstantiationException, NoSuchFieldException {
+        List<T> list = new ArrayList<T>();
+        int index = 1;
+        preparedStatement = connection.prepareStatement(sql);
+        if (params != null && !params.isEmpty()) {
+            for (int i = 0; i < params.size(); i++) {
+                preparedStatement.setObject(index++, params.get(i));
+            }
+        }
+        resultSet = preparedStatement.executeQuery();
+        ResultSetMetaData metaData = resultSet.getMetaData();
+        int cols_len = metaData.getColumnCount();
+        while (resultSet.next()) {
+            //通过反射机制创建一个实例
+            T resultObject = cls.newInstance();
+            for (int i = 0; i < cols_len; i++) {
+                String cols_name = metaData.getColumnName(i + 1);
+                Object cols_value = resultSet.getObject(cols_name);
+                if (cols_value == null) {
+                    cols_value = "";
+                }
+                Field field = cls.getDeclaredField(cols_name);
+                if (field.getType() == int.class) {
+                    if (cols_value == "") {
+                        cols_value = 0;
+                    } else {
+                        cols_value = Integer.parseInt(cols_value.toString());
+                    }
+
+                }
+                field.setAccessible(true); //打开javabean的访问权限
+                field.set(resultObject, cols_value);
+            }
+            list.add(resultObject);
+        }
+        return list;
+    }
+
+    /**
      * 关闭连接和预编译
-     * @param connection 连接
+     *
+     * @param connection        连接
      * @param preparedStatement 预编译
      * @throws SQLException 关闭连接和预编译异常
      */
@@ -119,7 +223,8 @@ public class JDBCUtil {
         closePreparedStatement(preparedStatement);
     }
 
-    public static void closeConAndPreAndRes(Connection connection, PreparedStatement preparedStatement,
+    public static void closeConAndPreAndRes(Connection connection,
+                                            PreparedStatement preparedStatement,
                                             ResultSet resultSet) throws SQLException {
         closeConnection(connection);
         closePreparedStatement(preparedStatement);

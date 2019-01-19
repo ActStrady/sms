@@ -2,6 +2,7 @@ package com.eos.dao;
 
 import com.eos.entity.Student;
 
+import java.sql.SQLException;
 import java.util.List;
 
 public interface StudentDao {
@@ -11,13 +12,13 @@ public interface StudentDao {
      * @param stuNum
      * @return
      */
-    Student queryBystuNum(int stuNum);
+    Student queryByStuNum(int stuNum) throws SQLException, ClassNotFoundException;
 
     /**
      * 查询所有学生
      * @return
      */
-    List<Student> queryAll();
+    List<Student> queryAll() throws SQLException, ClassNotFoundException;
 
     /**
      * 插入学生

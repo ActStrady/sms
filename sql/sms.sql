@@ -51,12 +51,12 @@ CREATE TABLE `teacher`
 DROP TABLE IF EXISTS admin;
 CREATE TABLE admin
 (
-  adminId    int                                 NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '管理员编号',
-  adminName  varchar(255)                        NOT NULL COMMENT '姓名',
-  password   varchar(255)                        NOT NULL COMMENT '密码',
-  createTime timestamp default CURRENT_TIMESTAMP null comment '创建时间',
-  updateTime timestamp                           null comment '修改时间',
-  isDelete   int       default 0                 not null comment '删除标记'
+  adminId    int                 NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '管理员编号',
+  adminName  varchar(255)        NOT NULL COMMENT '姓名',
+  password   varchar(255)        NOT NULL COMMENT '密码',
+  createTime timestamp default CURRENT_TIMESTAMP comment '创建时间',
+  updateTime timestamp comment '修改时间',
+  isDelete   int       default 0 not null comment '删除标记'
 ) ENGINE = InnoDB
   AUTO_INCREMENT = 20180001
   DEFAULT CHARSET = utf8 COMMENT '管理员表';
